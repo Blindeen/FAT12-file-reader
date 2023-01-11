@@ -367,6 +367,8 @@ struct file_t* file_open(struct volume_t* pvolume, const char* file_name)
         }
     }
 
+    errno = ENOENT;
+
     dir_close(directory);
     free(file);
 
@@ -424,7 +426,13 @@ size_t file_read(void *ptr, size_t size, size_t nmemb, struct file_t *stream)
         uint16_t cluster = stream->file_clusters->clusters[stream->offset/(stream->pvolume->boot_sector.bytes_per_sector * stream->pvolume->boot_sector.sectors_per_cluster)];
         uint32_t first_sector_of_cluster = ((cluster - 2) * stream->pvolume->boot_sector.sectors_per_cluster) + first_data_sector;
 
-        disk_read(stream->pvolume->pdisk, (int32_t)first_sector_of_cluster, buffer, stream->pvolume->boot_sector.sectors_per_cluster);
+        int res = disk_read(stream->pvolume->pdisk, (int32_t)first_sector_of_cluster, buffer, stream->pvolume->boot_sector.sectors_per_cluster);
+        if(res == -1)
+        {
+            errno = ERANGE;
+            free(buffer);
+            return -1;
+        }
 
         uint32_t cluster_offset = stream->offset%(stream->pvolume->boot_sector.bytes_per_sector * stream->pvolume->boot_sector.sectors_per_cluster);
         uint32_t cluster_left_bytes = (stream->pvolume->boot_sector.bytes_per_sector * stream->pvolume->boot_sector.sectors_per_cluster) - cluster_offset;
@@ -474,16 +482,31 @@ int32_t file_seek(struct file_t* stream, int32_t offset, int whence)
         case SEEK_SET:
         {
             stream->offset = offset;
+            if(offset > (int32_t)stream->file_entry.size)
+            {
+                errno = ENXIO;
+                return -1;
+            }
         }
             break;
         case SEEK_CUR:
         {
             stream->offset += offset;
+            if(offset > (int32_t)stream->file_entry.size - stream->offset)
+            {
+                errno = ENXIO;
+                return -1;
+            }
         }
             break;
         case SEEK_END:
         {
             stream->offset = (int32_t)stream->file_entry.size + offset;
+            if(offset > 0)
+            {
+                errno = ENXIO;
+                return -1;
+            }
         }
             break;
         default:

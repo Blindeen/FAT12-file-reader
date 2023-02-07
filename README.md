@@ -1,5 +1,5 @@
 # File system FAT12
-FAT 12 file reader project for educational purpose :open_book:. Contains only reading files from root directory. 
+FAT12 file reader project for educational purpose :open_book:. Contains only reading files from root directory. 
 ## Author
 [@Blindeen](https://www.github.com/Blindeen)
 ## Usage

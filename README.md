@@ -1,4 +1,4 @@
-# File system FAT12
+# File reader FAT12
 ## Description
 FAT12 file reader project for educational purpose :open_book:. Contains only reading files from root directory. This project is not free from bugs so take note of it.
 ## Author
